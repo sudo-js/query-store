@@ -1,0 +1,41 @@
+{
+  "name": "query-store",
+  "version": "1.0.0",
+  "description": "Everything you ever wanted to ask your store but could not.",
+  "main": "index.js",
+  "scripts": {
+    "test": "karma start"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sudo-js/query-store.git"
+  },
+  "keywords": [
+    "query",
+    "store",
+    "javascript",
+    "badass"
+  ],
+  "author": "Rob Robbins",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/sudo-js/query-store/issues"
+  },
+  "homepage": "https://github.com/sudo-js/query-store#readme",
+  "devDependencies": {
+    "babel-cli": "^6.24.1",
+    "babel-loader": "^7.1.0",
+    "babel-preset-env": "^1.5.2",
+    "core-js": "^2.4.1",
+    "jasmine": "^2.6.0",
+    "karma": "^1.7.0",
+    "karma-babel-preprocessor": "^6.0.1",
+    "karma-chrome-launcher": "^2.2.0",
+    "karma-jasmine": "^1.1.0",
+    "karma-mocha-reporter": "^2.2.3",
+    "karma-phantomjs-launcher": "^1.0.4",
+    "karma-webpack": "^2.0.3",
+    "phantomjs-prebuilt": "^2.1.14",
+    "webpack": "^3.0.0"
+  }
+}

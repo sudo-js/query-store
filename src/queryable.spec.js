@@ -45,7 +45,7 @@ describe('queryable child class', function() {
       this.store.map({entities: [{key: 'user_mentions', keys: ['name', 'screen_name'], as: 'nameDrops'}]});
       expect(this.store.query('TwitterDev').from('nameDrops').filter('id')).toBe(850007368138018817);
       expect(this.store.query('Twitter Marketing').from('nameDrops').filter('id')).toBe(848930551989915648);
-      expect(this.store.query('TwitterMktg,TwitterDev').from('nameDrops').filter('id', true)).toEqual([848930551989915648, 850007368138018817]);
+      expect(this.store.query('TwitterMktg,TwitterDev').from('nameDrops').filter('id')).toEqual([848930551989915648, 850007368138018817]);
     });
   });
 

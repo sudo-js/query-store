@@ -36,6 +36,22 @@ describe('schemable child class', function() {
       expect(this.store.user['Twitter API']).toEqual([this.store.data[0], this.store.data[1]]);
     });
 
+    it('can remap a top level key', function() {
+      this.store.map({ user: ['name', 'screen_name'] });
+      expect(this.store.user.twitterapi).toEqual([this.store.data[0], this.store.data[1]]);
+      expect(this.store.user['Twitter API']).toEqual([this.store.data[0], this.store.data[1]]);
+
+      // change one of the underlying data
+      this.store.setPath('user.name', 'Not Twitter API', this.store.data[0]);
+      this.store.remap();
+
+      expect(this.store.user.twitterapi).toEqual([this.store.data[0], this.store.data[1]]);
+      expect(this.store.user['Twitter API']).toEqual([this.store.data[1]]);
+      expect(this.store.user['Twitter API'].length).toBe(1);
+      expect(this.store.user['Not Twitter API'].length).toBe(1);
+      expect(this.store.user['Not Twitter API']).toEqual([this.store.data[0]]);
+    });
+
     it('will setup query with a more complex schema (using as)', function() {
       expect(this.store.hashtags).toBeUndefined();
       // hoist hastags up to map level

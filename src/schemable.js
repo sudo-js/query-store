@@ -1,6 +1,11 @@
 import Pathable from './pathable';
 
 export default class extends Pathable {
+  constructor(data) {
+    super(data);
+
+    this.schemas = [];
+  }
   // ### hydrateMap
   // * __NOTES__: I would use a weakMap if keys could be strings. Using a Map is
   // a possibility but, not sure we need it
@@ -60,7 +65,9 @@ export default class extends Pathable {
   // * `param` {object} `schema`
   //
   // __NOTE__: we can prob, in the future, think about insertion order...
-  map(schema) {
+  map(schema, remap) {
+    // push the schema into our schema array in case we need to re-map it
+    !remap && this.schemas.push(schema);
     // create the map with no proto via create-null
     const make = (name) => { if(!(this.hasOwnProperty(name))) this[name] = Object.create(null);};
     // for each of the keys in the schema, create values-as-keys in our map
@@ -69,12 +76,15 @@ export default class extends Pathable {
       // the val is always an array, iterate them and act accordingly...
       for (let i = 0; i < val.length; i++) {
         if(typeof val[i] === 'string') {
+          // if remapping, clear the map
+          remap && i === 0 && delete this[key];
           make(key);
           this.hydrateMap(this[key], key, val[i]);
         } else {
           // as takes precedence, fall back to key
           let as = val[i].as || val[i].key;
-          // same as the string case, assure the map exists
+          // same as the string case, assure the map exists (and clear on 0th if remapping)
+          remap && i === 0 && delete this[as];
           make(as);
           // if there are `keys` pass them as is, hydrate will find them, note that
           // `key` should be a path in `keys` cases...
@@ -82,6 +92,17 @@ export default class extends Pathable {
           else this.hydrateMap(this[as], key, val[i].key);
         }
       }
+    }
+    // return the index at which this schema exists in our schema list so the consumer can unmap
+    return !remap && this.schemas.length - 1;
+  }
+
+  // ### remap
+  // * The store may decide to remap schemas after some action (like an update)
+  remap() {
+    for (let i = 0; i < this.schemas.length; i++) {
+      // optional bool signals that this is a remap operation
+      this.map(this.schemas[i], true);
     }
   }
 }

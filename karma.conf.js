@@ -9,10 +9,10 @@ module.exports = function(config) {
       'specs.webpack.js': ['webpack']
     },
     reporters: ['mocha'],
-    singleRun: false,
+    singleRun: true,
     webpack: {
       module: {
-        rules: [{ 
+        rules: [{
           test: /\.js$/,
           use: [{
             loader: 'babel-loader',

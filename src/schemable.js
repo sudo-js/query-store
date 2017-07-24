@@ -65,9 +65,9 @@ export default class extends Pathable {
   // * `param` {object} `schema`
   //
   // __NOTE__: we can prob, in the future, think about insertion order...
-  map(schema, remap) {
-    // push the schema into our schema array in case we need to re-map it
-    !remap && this.schemas.push(schema);
+  map(schema, remap, unmap) {
+    // push the schema into our schema array in case we need to re-map it (ony if mapping)
+    !remap && !unmap && this.schemas.push(schema);
     // create the map with no proto via create-null
     const make = (name) => { if(!(this.hasOwnProperty(name))) this[name] = Object.create(null);};
     // for each of the keys in the schema, create values-as-keys in our map
@@ -76,15 +76,21 @@ export default class extends Pathable {
       // the val is always an array, iterate them and act accordingly...
       for (let i = 0; i < val.length; i++) {
         if(typeof val[i] === 'string') {
-          // if remapping, clear the map
-          remap && i === 0 && delete this[key];
+          // if unmapping clear, if remapping clear the first time thru
+          if(unmap) {
+            delete this[key];
+            continue;
+          } else if(remap && i === 0) delete this[key];
           make(key);
           this.hydrateMap(this[key], key, val[i]);
         } else {
           // as takes precedence, fall back to key
           let as = val[i].as || val[i].key;
           // same as the string case, assure the map exists (and clear on 0th if remapping)
-          remap && i === 0 && delete this[as];
+          if(unmap) {
+            delete this[as];
+            continue;
+          } else if(remap && i === 0) delete this[as];
           make(as);
           // if there are `keys` pass them as is, hydrate will find them, note that
           // `key` should be a path in `keys` cases...
@@ -103,6 +109,13 @@ export default class extends Pathable {
     for (let i = 0; i < this.schemas.length; i++) {
       // optional bool signals that this is a remap operation
       this.map(this.schemas[i], true);
+    }
+  }
+
+  unmap(...args) {
+    for(let index of Object.values(args)) {
+      let schema = this.schemas.splice(index, 1);
+      Array.isArray(schema) && this.map(schema[0], null, true);
     }
   }
 }

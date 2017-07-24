@@ -50,6 +50,23 @@ describe('schemable child class', function() {
       expect(this.store.user['Twitter API'].length).toBe(1);
       expect(this.store.user['Not Twitter API'].length).toBe(1);
       expect(this.store.user['Not Twitter API']).toEqual([this.store.data[0]]);
+
+      // put it back
+      this.store.setPath('user.name', 'Twitter API', this.store.data[0]);
+    });
+
+    it('can unmap a top level key', function() {
+      expect(this.store.schemas.length).toBe(0);
+      expect(this.store.user).toBeUndefined();
+      const myMap = this.store.map({ user: ['name', 'screen_name'] });
+      expect(myMap).toBe(0);
+      expect(this.store.schemas.length).toBe(1);
+      expect(this.store.user).toBeDefined();
+      expect(this.store.user.twitterapi).toEqual([this.store.data[0], this.store.data[1]]);
+      expect(this.store.user['Twitter API']).toEqual([this.store.data[0], this.store.data[1]]);
+      this.store.unmap(myMap);
+      expect(this.store.user).toBeUndefined();
+      expect(this.store.schemas.length).toBe(0);
     });
 
     it('will setup query with a more complex schema (using as)', function() {

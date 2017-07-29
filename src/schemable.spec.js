@@ -89,4 +89,24 @@ describe('schemable child class', function() {
     });
   });
 
+  describe('data as an object (begin empty)', function() {
+    beforeEach(function() {
+      this.store = new Schemable;
+    });
+
+    it('maps a top level key', function() {
+      this.store.init({
+        user: {id: 1, firstName: 'Black', lastName: 'Knight', hash: 12345},
+        friends: [2, 3, 4],
+        catchPhrase: 'None shall pass',
+        bodyParts: {
+          intact: ['head'],
+          loppedOff: ['left-arm', 'right-arm', 'left-leg', 'right-leg']
+        },
+        thinksArthurIsACoward: true,
+
+      });
+    });
+  });
+
 });

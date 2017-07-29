@@ -15,19 +15,23 @@ export default class extends Pathable {
   hydrateMap(map, key, term) {
     // targets are the hashes of data that contain our terms which will be returned in a query operation
     const find = (k, d) => { return ~k.indexOf('.') ? this.getPath(k, d) : this.get(k, d); };
+
     const add = (v, i) => {
       if(Array.isArray(v)) {
         for (let j = 0; j < v.length; j++) {
           return add(v[j], i);
         }
       }
+
+      let data = typeof(i) === 'number' ? this.data[i] : this.data;
       // __NOTE:__ can use `in` safely here as we created it with no proto
       if(v in map) {
         // dont push a ref in more than once
-        !~map[v].indexOf(this.data[i]) && map[v].push(this.data[i]);
-      } else map[v] = [this.data[i]];
+        !~map[v].indexOf(data) && map[v].push(data);
+      } else map[v] = [data];
     };
-    const hydrate = (t, c, i) => {
+
+    function hydrate(t, c, i) {
       let val;
       // term can be an array of terms
       if(Array.isArray(t)) {
@@ -39,25 +43,30 @@ export default class extends Pathable {
         val = find(t, c);
         val && add(val, i);
       }
-    };
+    }
 
+    function iterate(t, c, i) {
+      // c may be an array...
+      if(Array.isArray(c)) {
+        for (let l = 0; l < c.length; l++) {
+          hydrate(t, c[l], i);
+        }
+
+      } else hydrate(t, c, i);
+    }
+
+    let curr;
     // our data is either an Array or an object (if json should have been parsed first)
     if(Array.isArray(this.data)) {
       for (let i = 0; i < this.data.length; i++) {
-        let curr = find(key, this.data[i]);
+        curr = find(key, this.data[i]);
         // if its not in this one, move along...
         if(!curr) continue;
-
-        // curr may be an array...
-        if(Array.isArray(curr)) {
-          for (let l = 0; l < curr.length; l++) {
-            hydrate(term, curr[l], i);
-          }
-
-        } else hydrate(term, curr, i);
+        iterate(term, curr, i);
       }
     } else { // non-array data
-
+      curr = find(key, this.data);
+      curr && iterate(term, curr);
     }
   }
   // ### map

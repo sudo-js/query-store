@@ -1,5 +1,6 @@
 const Queryable = require('./queryable').default;
 const json = require('./json/twitter').default;
+const userJson = require('./json/black_knight').default;
 
 describe('queryable child class', function() {
 
@@ -46,6 +47,37 @@ describe('queryable child class', function() {
       expect(this.store.query('TwitterDev').from('nameDrops').filter('id')).toBe(850007368138018817);
       expect(this.store.query('Twitter Marketing').from('nameDrops').filter('id')).toBe(848930551989915648);
       expect(this.store.query('TwitterMktg,TwitterDev').from('nameDrops').filter('id')).toEqual([848930551989915648, 850007368138018817]);
+    });
+  });
+  
+  describe('data as an object', function() {
+    beforeEach(function() {
+      this.store = new Queryable;
+      
+      this.store.init(userJson);
+    });
+    
+    afterEach(function() {
+      this.store.dataset.clear();
+    });
+
+    it('maps to a path, pointing to `key` as there is no `keys`', function() {
+      this.store.map({'garments.tees': {key: 'tags', as: 'tees'}});
+      // 2 are black
+      expect(this.store.query('black').from('tees').filter('id')).toEqual([4,5]);
+      // all 3 are XL
+      expect(this.store.query('xl').from('tees').filter('id').length).toBe(3);
+      // only one is non-black - note the returned val is 'unwrapped'
+      expect(this.store.query('very dark grey').from('tees').filter('id')).toEqual(6);
+    });
+    
+    it('maps an entry, pointing to key + val.key as `keys` is present', function() {
+      // specifying the root shortcuts a find operation...
+      this.store.map({garments: {key: 'armors', keys: 'tags', as: 'armors'}});
+      // 6 are black, note that the return of `from` is an array (the converted store dataset)
+      expect(this.store.query('black').from('armors', true).length).toBe(6);
+      // queries can be combinatorial for better results
+      expect(this.store.query('black,left').from('armors', true).length).toBe(2);
     });
   });
 

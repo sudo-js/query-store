@@ -16,8 +16,7 @@ export default class extends Schemable {
 
     for (let item of this.dataset) {
       for (let i = 0; i < filters.length; i++) {
-        found.push(~filters[i].indexOf('.') ? this.getPath(filters[i], item) :
-          this.get(filters[i], item));
+        found.push(this.find(filters[i], item));
       }
     }
     return this.unwrap(found);
@@ -42,8 +41,8 @@ export default class extends Schemable {
       }
     }
 
-    // un-wrap the dataset if not filtering && only a length of 1
-    return noFilter ? [...this.dataset] : this;
+    // un-wrap the dataset if not filtering && only a length of 1 - note that minus any filtering we return an array
+    return noFilter ? Array.from(this.dataset) : this;
   }
 
   // ### query

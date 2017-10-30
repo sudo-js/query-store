@@ -72,14 +72,15 @@ describe('schemable child class', function() {
     it('will setup query with a more complex schema (using as)', function() {
       expect(this.store.hashtags).toBeUndefined();
       // hoist hastags up to map level
-      this.store.map({entities: [{key: 'hashtags', as: 'hashtags'}]});
+      this.store.map({entities: {key: 'hashtags', as: 'hashtags'}});
       expect(this.store.hashtags).toBeDefined();
-      // inspect the hashtags map
+      // inspect the hashtags, there should be 3
+      expect(Object.keys(this.store.hashtags).length).toBe(3);
     });
 
     it('correctly sets up from a schema with "keys (note map name)"', function() {
       expect(this.store.nameDrops).toBeUndefined();
-      this.store.map({entities: [{key: 'user_mentions', keys: ['name', 'screen_name'], as: 'nameDrops'}]});
+      this.store.map({entities: {key: 'user_mentions', keys: ['name', 'screen_name'], as: 'nameDrops'}});
       expect(this.store.nameDrops).toBeDefined();
       expect(Object.keys(this.store.nameDrops).length).toBe(3);
       // assure we dont push dupe refs in
@@ -92,21 +93,57 @@ describe('schemable child class', function() {
   describe('data as an object (begin empty)', function() {
     beforeEach(function() {
       this.store = new Schemable;
-    });
-
-    it('maps a top level key', function() {
+      
       this.store.init({
-        user: {id: 1, firstName: 'Black', lastName: 'Knight', hash: 12345},
-        friends: [2, 3, 4],
-        catchPhrase: 'None shall pass',
-        bodyParts: {
-          intact: ['head'],
-          loppedOff: ['left-arm', 'right-arm', 'left-leg', 'right-leg']
+        user: {
+          id: 1,
+          firstName: 'Black',
+          lastName: 'Knight',
+          hash: 12345,
+          friends: [2, 3, 4],
+          catchPhrase: 'None shall pass',
+          bodyParts: {
+            intact: ['head'],
+            loppedOff: ['left-arm', 'right-arm', 'left-leg', 'right-leg']
+          },
+          thinksArthurIsACoward: true,
         },
-        thinksArthurIsACoward: true,
-
+        garments: {
+          tees: [
+            {id: 4, tags: ['black', 'xl', 'has text']},
+            {id: 5, tags: ['black', 'xl']},
+            {id: 6, tags: ['xl', 'very dark grey']}],
+          armors: [
+            {id: 9, tags: ['black', 'arm', 'right']},
+            {id: 10, tags: ['black', 'arm', 'left']},
+            {id: 11, tags: ['black', 'leg', 'right']},
+            {id: 12, tags: ['black', 'leg', 'left']},
+            {id: 13, tags: ['black', 'chest']},
+            {id: 15, tags: ['very dark grey', 'chest']},
+            {id: 14, tags: ['black', 'helmet', 'fluted']},
+            {id: 16, tags: ['very dark grey', 'helmet']},]
+        }
       });
     });
-  });
 
+    it('maps to a path, pointing to `key` as there is no `keys`', function() {
+      this.store.map({'garments.tees': {key: 'tags', as: 'tees'}});
+      expect(Object.keys(this.store.tees).length).toBe(4);
+      // should be 2 black tees
+      expect(this.store.tees.black).toBeDefined();
+      // if fails because of non-ordered, just use typeof number...
+      expect(this.store.tees.black[0].id).toBe(4);
+      expect(this.store.tees.black[1].id).toBe(5);
+      expect(this.store.tees['very dark grey'][0].id).toBe(6);
+    });
+    
+    it('maps an entry, pointing to key + val.key as `keys` is present', function() {
+      // specifying the root shortcuts a find operation...
+      this.store.map({garments: {key: 'armors', keys: 'tags', as: 'armors'}});
+      expect(this.store.armors).toBeDefined();
+      // there is only one fluted armor
+      expect(this.store.armors.fluted[0].id).toBe(14);
+    });
+
+  });
 });

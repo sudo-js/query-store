@@ -13,37 +13,39 @@ export default class extends Pathable {
   // * `param` {string} `key`. The key (or path) from the top level of data([i])
   // * `param` {string||array} `term`. The key (or path) from data([i])[key] or an array of them
   hydrateMap(map, key, term) {
-    // targets are the hashes of data that contain our terms which will be returned in a query operation
-    const find = (k, d) => { return ~k.indexOf('.') ? this.getPath(k, d) : this.get(k, d); };
-
+    const isAry = Array.isArray(this.data);
+    // our data is either an Array or an object with an indicated 'root' (via the term or default to key)
+    const ary = isAry ? this.data : this.find(key);
+    // TODO throw here if no ary?
+    
     const add = (v, i) => {
       if(Array.isArray(v)) {
         for (let j = 0; j < v.length; j++) {
-          return add(v[j], i);
+          add(v[j], i);
         }
+      } else {
+        let data = ary[i];
+        // __NOTE:__ can use `in` safely here as we created it with no proto
+        if(v in map) {
+          // dont push a ref in more than once
+          !~map[v].indexOf(data) && map[v].push(data);
+        } else map[v] = [data];
       }
-
-      let data = typeof(i) === 'number' ? this.data[i] : this.data;
-      // __NOTE:__ can use `in` safely here as we created it with no proto
-      if(v in map) {
-        // dont push a ref in more than once
-        !~map[v].indexOf(data) && map[v].push(data);
-      } else map[v] = [data];
     };
 
-    function hydrate(t, c, i) {
+    const hydrate = (t, c, i) => {
       let val;
       // term can be an array of terms
       if(Array.isArray(t)) {
         for (let k = 0; k < t.length; k++) {
-          val = find(t[k], c);
+          val = this.find(t[k], c);
           val && add(val, i);
         }
       } else {
-        val = find(t, c);
+        val = this.find(t, c);
         val && add(val, i);
       }
-    }
+    };
 
     function iterate(t, c, i) {
       // c may be an array...
@@ -56,17 +58,13 @@ export default class extends Pathable {
     }
 
     let curr;
-    // our data is either an Array or an object (if json should have been parsed first)
-    if(Array.isArray(this.data)) {
-      for (let i = 0; i < this.data.length; i++) {
-        curr = find(key, this.data[i]);
-        // if its not in this one, move along...
-        if(!curr) continue;
-        iterate(term, curr, i);
-      }
-    } else { // non-array data
-      curr = find(key, this.data);
-      curr && iterate(term, curr);
+    
+    for (let i = 0; i < ary.length; i++) {
+      // in the data-is-array case find the curr @i, otherwise no need to find it...
+      curr = isAry ? this.find(key, ary[i]) : ary[i];
+      // if its not in this one, move along...
+      if(!curr) continue;
+      iterate(term, curr, i);
     }
   }
   // ### map
@@ -78,35 +76,42 @@ export default class extends Pathable {
     // push the schema into our schema array in case we need to re-map it (ony if mapping)
     !remap && !unmap && this.schemas.push(schema);
     // create the map with no proto via create-null
-    const make = (name) => { if(!(this.hasOwnProperty(name))) this[name] = Object.create(null);};
+    const make = name => { if(!(this.hasOwnProperty(name))) this[name] = Object.create(null);};
+    // the operation to perform on the actual schema...
+    const parse = (key, val, i) => {
+      if(typeof val === 'string') {
+        // if unmapping clear, if remapping clear the first time thru
+        if(unmap) {
+          delete this[key];
+          return;
+        } else if(remap && i === 0) delete this[key];
+        
+        make(key);
+        this.hydrateMap(this[key], key, val);
+        
+      } else {
+        // as takes precedence, fall back to key
+        let as = val.as || val.key;
+        // same as the string case, assure the map exists (and clear on 0th if remapping)
+        if(unmap) {
+          delete this[as];
+          return;
+        } else if(remap && i === 0) delete this[as];
+        make(as);
+        // if there are `keys` pass them as is, hydrate will find them, note that
+        // `key` and `val.key` are formed into a path in the `keys` case...
+        if(val.hasOwnProperty('keys')) this.hydrateMap(this[as], `${key}.${val.key}`, val.keys);
+        else this.hydrateMap(this[as], key, val.key);
+      }
+    };
     // for each of the keys in the schema, create values-as-keys in our map
     // which we will use to facilitate query-ing
     for(let [key, val] of Object.entries(schema)) {
-      // the val is always an array, iterate them and act accordingly...
-      for (let i = 0; i < val.length; i++) {
-        if(typeof val[i] === 'string') {
-          // if unmapping clear, if remapping clear the first time thru
-          if(unmap) {
-            delete this[key];
-            continue;
-          } else if(remap && i === 0) delete this[key];
-          make(key);
-          this.hydrateMap(this[key], key, val[i]);
-        } else {
-          // as takes precedence, fall back to key
-          let as = val[i].as || val[i].key;
-          // same as the string case, assure the map exists (and clear on 0th if remapping)
-          if(unmap) {
-            delete this[as];
-            continue;
-          } else if(remap && i === 0) delete this[as];
-          make(as);
-          // if there are `keys` pass them as is, hydrate will find them, note that
-          // `key` should be a path in `keys` cases...
-          if(val[i].hasOwnProperty('keys')) this.hydrateMap(this[as], `${key}.${val[i].key}`, val[i].keys);
-          else this.hydrateMap(this[as], key, val[i].key);
-        }
-      }
+      // the val may be an array...
+      if(Array.isArray(val)) {
+        for (let i = 0; i < val.length; i++) parse(key, val[i], i);
+      
+      } else parse(key, val, 0); // passing 0 is a flag to clear for remapping
     }
     // return the index at which this schema exists in our schema list so the consumer can unmap
     return !remap && this.schemas.length - 1;

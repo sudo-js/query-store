@@ -12,6 +12,12 @@ describe('Pathable base class', function() {
     expect(this.store.get('foo')).toBe('bar');
   });
   
+  it('can get a key via find', function() {
+    expect(this.store.get('bar')).toBeUndefined();
+    this.store.set('bar', 'baz');
+    expect(this.store.find('bar')).toBe('baz');
+  });
+  
   it('does not alter the internal data hash with get(s)', function() {
     let s = new Pathable({foo: {bar: 'baz', spam: {eggs: 'vikings'}}});
     expect(s.getPath('foo.spam.eggs')).toBe('vikings');
@@ -25,6 +31,15 @@ describe('Pathable base class', function() {
     this.store.setPath('a.b', {stuff: 'some b stuff'});
     expect(this.store.get('a')).toEqual({stuff: 'some a stuff', b: {stuff: 'some b stuff'}});
     expect(this.store.getPath('a.b')).toEqual({stuff: 'some b stuff'});
+  });
+  
+  it('can set/get key-paths via find and put', function() {
+    expect(this.store.find('b.c.d')).toBeUndefined();
+    this.store.put('b', {stuff: 'some b stuff'});
+    expect(this.store.find('b')).toEqual({stuff: 'some b stuff'});
+    this.store.put('b.c', {stuff: 'some c stuff'});
+    expect(this.store.find('b')).toEqual({stuff: 'some b stuff', c: {stuff: 'some c stuff'}});
+    expect(this.store.find('b.c')).toEqual({stuff: 'some c stuff'});
   });
   
   it('can get multiple keys/paths with gets', function() {

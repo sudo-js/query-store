@@ -12,7 +12,7 @@ export default class {
 
   emit() {
     for (let i = 0; i < this.observers.length; i++) {
-      this.observers[i].call(null);
+      this.observers[i]();
     }
   }
 

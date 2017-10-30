@@ -1,6 +1,12 @@
 import Emitable from './emitable';
 
 export default class extends Emitable {
+  // ### find
+  // * Will choose either get, or getPath depending on the presence of a `.`
+  find(str, data) {
+    return ~str.indexOf('.') ? this.getPath(str, data) : this.get(str, data);
+  }
+  
   get(key, data=this.data) { return data[key]; }
 
   getPath(path, data=this.data) {
@@ -27,11 +33,21 @@ export default class extends Emitable {
   gets(ary, data) {
     let ret = [];
 
-    for (let i = 0; i < ary.length; i++) {
-      ret.push(~ary[i].indexOf('.') ? this.getPath(ary[i], data) : this.get(ary[i], data));
-    }
+    for (let i = 0; i < ary.length; i++) ret.push(this.find(ary[i], data));
 
     return ret;
+  }
+  
+  // ### put
+  // * Will choose either set, or setPath depending on the presence of a `.`
+  put(str, val, data) {
+    ~str.indexOf('.') ? this.setPath(str, val, data) : this.set(str, val, data);
+  }
+  
+  // ### remove
+  // * Will choose either unset, or unsetPath depending on the presence of a `.`
+  remove(str, data) {
+    str.indexOf('.') ? this.unsetPath(str, data) : this.unset(str, data);
   }
 
   set(key, val, data=this.data) { data[key] = val; }
@@ -53,7 +69,7 @@ export default class extends Emitable {
   // * `param` {Object} `obj`. The keys and values to set.
   sets(obj, data) {
     for (let [key, val] of Object.entries(obj)) {
-      ~key.indexOf('.') ? this.setPath(key, val, data) : this.set(key, val, data);
+      this.put(key, val, data);
     }
   }
 
@@ -77,9 +93,7 @@ export default class extends Emitable {
   // Deletes a number of keys or paths from this object's data store
   //
   // `param` {array} `ary`. An array of keys or paths.
-  unsets(ary, data) {
-    for (let i = 0; i < ary.length; i++) {
-      ~ary[i].indexOf('.') ? this.unsetPath(ary[i], data) : this.unset(ary[i], data);
-    }
+  unsets(ary, data=this.data) {
+    for (let i = 0; i < ary.length; i++) this.remove(ary[i], data);
   }
 }

@@ -76,8 +76,12 @@ describe('queryable child class', function() {
       this.store.map({garments: {key: 'armors', keys: 'tags', as: 'armors'}});
       // 6 are black, note that the return of `from` is an array (the converted store dataset)
       expect(this.store.query('black').from('armors', true).length).toBe(6);
-      // queries can be combinatorial for better results
-      expect(this.store.query('black,left').from('armors', true).length).toBe(2);
+      // we have 2 helmets
+      expect(this.store.query('helmet').from('armors').filter('id')).toEqual([14, 16]);
+      // use a filter function when stuff isnt a key (an item in an array for instance)
+      const filterFn = item => { if (item.tags.indexOf('fluted') !== -1) return item; };
+      
+      expect(this.store.query('helmet').from('armors').filter(filterFn).id).toBe(14);
     });
   });
 

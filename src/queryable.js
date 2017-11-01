@@ -8,17 +8,29 @@ export default class extends Schemable {
     this.dataset = new Set;
   }
   // ### filter
-  filter(keys) {
-    const found = [];
-    const filters = keys.split(',');
-
+  // * Given an array of keys return dataset items who have said key. 
+  // * Given a function, pass the current item to it and push any truthy return into the returned array.
+  filter(arg) {
     if(!this.dataset) return;
+    
+    const found = [];
+    
+    if (typeof arg === 'function') {
+      for (let item of this.dataset) {
+        let ret = arg(item);
+        ret && found.push(ret);
+      }
+      
+    } else {
+      const filters = arg.split(',');
 
-    for (let item of this.dataset) {
-      for (let i = 0; i < filters.length; i++) {
-        found.push(this.find(filters[i], item));
+      for (let item of this.dataset) {
+        for (let i = 0; i < filters.length; i++) {
+          found.push(this.find(filters[i], item));
+        }
       }
     }
+
     return this.unwrap(found);
   }
 
